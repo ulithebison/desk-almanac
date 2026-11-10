@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Almanac">
 <meta name="theme-color" content="#F3EFE6">
 <title>The Desk Almanac</title>
@@ -26,6 +26,9 @@
     -webkit-text-size-adjust: 100%;
   }
   body.night { background: #000; }
+  /* Strip behind the iPadOS status bar (home-screen app only; 0 px in the browser) */
+  #safeTop { position: absolute; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); background: var(--ink); }
+  body.night #safeTop { background: #000; }
   body.night #stage { opacity: 0.32; }
 
   #stage {
@@ -112,6 +115,7 @@
 </style>
 </head>
 <body>
+<div id="safeTop"></div>
 <div id="stage">
   <header>
     <div class="side" id="coords">Neu-Ulm</div>
@@ -258,10 +262,17 @@
   }
 
   // ================= fit to screen =================
+  // Scale the 1024 × 768 design to the screen, then stretch the stage so it
+  // fills every pixel below the status bar (the layout is fluid enough for small ratio changes).
   function fit() {
-    var w = window.innerWidth, h = window.innerHeight;
+    var top = $('safeTop').offsetHeight;
+    var w = window.innerWidth, h = window.innerHeight - top;
     var s = Math.min(w / 1024, h / 768);
-    $('stage').style.transform = 'translate(' + ((w - 1024 * s) / 2) + 'px,' + ((h - 768 * s) / 2) + 'px) scale(' + s + ')';
+    var st = $('stage').style;
+    st.width = (w / s) + 'px';
+    st.height = (h / s) + 'px';
+    st.transform = 'translate(0,' + top + 'px) scale(' + s + ')';
+    if (calendarData) renderCalendar();
   }
 
   // ================= weather codes & icons =================
@@ -692,6 +703,7 @@
   $('coords').textContent = CONFIG.place + ' · ' + CONFIG.lat.toFixed(2) + ' N ' + CONFIG.lon.toFixed(2) + ' E';
   fit();
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
   tick();
   loadWeather();
   loadAir();
