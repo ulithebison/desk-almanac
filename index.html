@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Almanac">
+<meta name="theme-color" content="#F3EFE6">
+<title>The Desk Almanac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3EFE6;
+    --ink: #1B1A17;
+    --muted: #5E5A52;
+    --faint: #8A857A;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--paper); color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none; user-select: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  body.night { background: #000; }
+  body.night #stage { opacity: 0.32; }
+
+  #stage {
+    position: absolute; left: 0; top: 0;
+    width: 1024px; height: 768px;
+    transform-origin: 0 0;
+    padding: 26px 34px 18px;
+    background: var(--paper);
+    font-family: Newsreader, Georgia, serif;
+    display: flex; flex-direction: column;
+    transition: opacity 3s;
+  }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  .kicker {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    border-bottom: 1px solid var(--ink); padding-bottom: 4px;
+    display: flex; justify-content: space-between;
+  }
+  .kicker .aside { color: var(--muted); }
+
+  header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding-bottom: 10px; border-bottom: 3px double var(--ink);
+  }
+  header .side { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); width: 230px; }
+  header h1 { margin: 0; font-size: 44px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+
+  main { flex: 1; display: grid; grid-template-columns: 1.25fr 1fr 1fr; min-height: 0; }
+  .col { display: flex; flex-direction: column; gap: 14px; min-height: 0; padding-top: 18px; }
+  .col1 { padding-right: 24px; border-right: 1px solid var(--ink); }
+  .col2 { padding: 18px 22px 0; border-right: 1px solid var(--ink); }
+  .col3 { padding-left: 22px; }
+
+  #time { font-size: 148px; font-weight: 400; line-height: 0.85; letter-spacing: -6px; font-variant-numeric: tabular-nums; }
+  .now { display: flex; align-items: center; gap: 14px; padding-top: 8px; border-top: 1px solid var(--ink); }
+  .now svg { width: 54px; height: 54px; flex-shrink: 0; }
+  #nowTemp { font-size: 42px; line-height: 1; }
+  #nowDesc { font-style: italic; font-size: 26px; }
+  #nowMeta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #outlook { font-size: 16px; font-style: italic; line-height: 1.4; min-height: 22px; }
+
+  table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  th { font-weight: 400; text-align: left; color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid var(--ink); }
+  td { padding: 5px 0; border-bottom: 1px dotted var(--faint); }
+  tr:last-child td { border-bottom: 0; }
+  .r { text-align: right; }
+  .plain td { border-bottom: 0; padding: 3px 0; }
+  .today td:first-child { font-weight: 500; }
+
+  #radar { position: relative; height: 170px; margin-top: 8px; overflow: hidden; border: 1px solid var(--ink); background: #E9E4D8; }
+  #radar .layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+  #radar img { position: absolute; width: 256px; height: 256px; display: block; }
+  #radarBase { filter: grayscale(1) contrast(0.9); opacity: 0.55; }
+  .rain { opacity: 0; filter: grayscale(1) contrast(1.8) brightness(0.55); }
+  .rain.on { opacity: 0.9; }
+  #radarDot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 4px; background: var(--ink); left: 50%; top: 50%; }
+  #radarLabel { position: absolute; left: 50%; top: 50%; margin: 6px 0 0 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+  #radarTime { position: absolute; right: 6px; bottom: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: rgba(243,239,230,0.85); padding: 1px 4px; }
+  #radarCaption { font-size: 14px; font-style: italic; margin-top: 6px; }
+
+  .moon { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .moon svg { width: 40px; height: 40px; flex-shrink: 0; }
+  #moonText { font-size: 16px; }
+
+  #calBox { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 9px; }
+  .ev { display: flex; gap: 12px; }
+  .ev .t { font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding-top: 3px; width: 50px; flex-shrink: 0; white-space: nowrap; }
+  .ev .t.ad { font-size: 11px; padding-top: 5px; }
+  .ev .ti { font-size: 18px; line-height: 1.25; }
+  .ev .sub { font-size: 14px; font-style: italic; color: var(--muted); }
+  .ev.past { color: var(--faint); }
+  .ev.past .ti { text-decoration: line-through; }
+  .ev.small .ti { font-size: 16px; }
+  .ev.small .t { padding-top: 2px; }
+  .more, .empty { font-size: 14px; font-style: italic; color: var(--muted); }
+
+  #otd { background: var(--ink); color: var(--paper); padding: 14px 16px; margin-bottom: 14px; flex-shrink: 0; }
+  #otd .k { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #D6D0C3; }
+  #otd p { margin: 8px 0 0; font-size: 17px; line-height: 1.35; }
+
+  footer { border-top: 1px solid var(--ink); padding-top: 6px; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  footer .err { color: #9B2C1F; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="side" id="coords">Neu-Ulm</div>
+    <h1>The Desk Almanac</h1>
+    <div class="side" id="dateLine" style="text-align: right">&nbsp;</div>
+  </header>
+
+  <main>
+    <div class="col col1">
+      <div id="time">--:--</div>
+      <div class="now">
+        <span id="nowIcon"></span>
+        <div>
+          <div><span id="nowTemp">--°</span> <span id="nowDesc"></span></div>
+          <div class="mono" id="nowMeta">loading weather…</div>
+        </div>
+      </div>
+      <div id="outlook"></div>
+      <table>
+        <thead><tr><th>Day</th><th>Sky</th><th class="r">Hi</th><th class="r">Lo</th><th class="r">Rain</th></tr></thead>
+        <tbody id="daily"></tbody>
+      </table>
+    </div>
+
+    <div class="col col2">
+      <div>
+        <div class="kicker"><span>Radar · last hour</span></div>
+        <div id="radar">
+          <div class="layer" id="radarBase"></div>
+          <div class="layer" id="radarRain"></div>
+          <span id="radarDot"></span>
+          <span id="radarLabel">Neu-Ulm</span>
+          <span id="radarTime"></span>
+        </div>
+        <div id="radarCaption">&nbsp;</div>
+      </div>
+
+      <div>
+        <div class="kicker"><span>Sun &amp; moon</span></div>
+        <table class="plain" style="margin-top: 6px">
+          <tbody>
+            <tr><td>Civil dawn</td><td class="r" id="dawn">--:--</td></tr>
+            <tr><td>Sunrise</td><td class="r" id="rise">--:--</td></tr>
+            <tr><td>Sunset</td><td class="r" id="set">--:--</td></tr>
+            <tr><td>Civil dusk</td><td class="r" id="dusk">--:--</td></tr>
+            <tr><td style="font-weight: 500">Day length</td><td class="r" style="font-weight: 500" id="dayLen">--</td></tr>
+          </tbody>
+        </table>
+        <div class="moon">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#1B1A17"/><path id="moonLit" d="" fill="#F3EFE6"/></svg>
+          <div id="moonText"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="kicker"><span>The air</span></div>
+        <table class="plain" style="margin-top: 6px">
+          <tbody>
+            <tr><td>UV index</td><td class="r" id="uv">–</td></tr>
+            <tr><td>Air quality</td><td class="r" id="aqi">–</td></tr>
+            <tr><td>Pollen</td><td class="r" id="pollen">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col col3">
+      <div id="calBox"></div>
+      <div id="otd">
+        <div class="k">On this day</div>
+        <div id="otdBody"><p>…</p></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Open-Meteo · RainViewer · © OpenStreetMap, © CARTO · Wikipedia</span>
+    <span id="updated"></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ================= CONFIG =================
+  var CONFIG = {
+    lat: 48.39,
+    lon: 10.01,
+    place: 'Neu-Ulm',
+    timezone: 'Europe/Berlin',
+    calendarUrl: 'https://desk-calendar.ipad-dashboard-uli.workers.dev/events',
+    wikiLang: 'en',           // 'de' for German "On this day"
+    radarZoom: 7,             // RainViewer free tier: max 7
+    radarAnimate: true,       // loop the last hour of radar frames
+    nightFrom: 22,            // dim from…
+    nightTo: 6,               // …until
+    refreshMin: { weather: 15, air: 30, radar: 10, calendar: 10 },
+    reloadEveryHours: 6
+  };
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function dayStart(key) { var p = key.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function getJSON(url) {
+    return fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function ordinal(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+  function shorten(s, max) {
+    if (s.length <= max) return s;
+    var cut = s.slice(0, max);
+    return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+  }
+
+  // ================= status / footer =================
+  var status = {};
+  function mark(src, ok) { status[src] = { ok: ok, at: new Date() }; renderFooter(); }
+  function renderFooter() {
+    var w = status.weather;
+    var parts = [];
+    if (w && w.ok) parts.push('Updated ' + hm(w.at));
+    var bad = [];
+    for (var k in status) if (status.hasOwnProperty(k) && !status[k].ok) bad.push(k);
+    var html = esc(parts.join(''));
+    if (bad.length) html += (html ? ' · ' : '') + '<span class="err">offline: ' + esc(bad.join(', ')) + '</span>';
+    $('updated').innerHTML = html;
+  }
+
+  // ================= fit to screen =================
+  function fit() {
+    var w = window.innerWidth, h = window.innerHeight;
+    var s = Math.min(w / 1024, h / 768);
+    $('stage').style.transform = 'translate(' + ((w - 1024 * s) / 2) + 'px,' + ((h - 768 * s) / 2) + 'px) scale(' + s + ')';
+  }
+
+  // ================= weather codes & icons =================
+  var WMO = {
+    0: ['clear', 'clear'], 1: ['mostly clear', 'partly'], 2: ['partly cloudy', 'partly'], 3: ['overcast', 'cloud'],
+    45: ['fog', 'fog'], 48: ['rime fog', 'fog'],
+    51: ['light drizzle', 'rain'], 53: ['drizzle', 'rain'], 55: ['heavy drizzle', 'rain'],
+    56: ['freezing drizzle', 'rain'], 57: ['freezing drizzle', 'rain'],
+    61: ['light rain', 'rain'], 63: ['rain', 'rain'], 65: ['heavy rain', 'rain'],
+    66: ['freezing rain', 'rain'], 67: ['freezing rain', 'rain'],
+    71: ['light snow', 'snow'], 73: ['snow', 'snow'], 75: ['heavy snow', 'snow'], 77: ['snow grains', 'snow'],
+    80: ['showers', 'rain'], 81: ['showers', 'rain'], 82: ['heavy showers', 'rain'],
+    85: ['snow showers', 'snow'], 86: ['snow showers', 'snow'],
+    95: ['thunderstorm', 'storm'], 96: ['thunder & hail', 'storm'], 99: ['thunder & hail', 'storm']
+  };
+  function wmo(code) { return WMO[code] || ['unknown', 'cloud']; }
+
+  var CLOUD = 'M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 11 3.5 3.5 0 0 0 7 18z';
+  var CLOUD_HI = 'M7 15h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 8 3.5 3.5 0 0 0 7 15z';
+  var ICONS = {
+    clear: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    night: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    partly: '<path d="M9 20h9a3.5 3.5 0 0 0 .5-6.96A5 5 0 0 0 9.2 13 3.5 3.5 0 0 0 9 20z"/><path d="M10.5 9.5a3.5 3.5 0 1 0-4.6 4.4M7 3v1.5M2 8h1.5M3.5 4.5l1 1M11.5 4.5l-1 1"/>',
+    cloud: '<path d="' + CLOUD + '"/>',
+    fog: '<path d="' + CLOUD_HI + '"/><path d="M4 18.5h16M6 21.5h12"/>',
+    rain: '<path d="' + CLOUD_HI + '"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+    snow: '<path d="' + CLOUD_HI + '"/><path d="M8 19h.01M12 21h.01M16 19h.01" stroke-width="2.4"/>',
+    storm: '<path d="' + CLOUD_HI + '"/><path d="M12.5 15l-2 3.5h3l-2 3.5"/>'
+  };
+  function iconSvg(kind, isDay) {
+    if (!isDay && (kind === 'clear' || kind === 'partly')) kind = kind === 'clear' ? 'night' : 'cloud';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#1B1A17" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[kind] || ICONS.cloud) + '</svg>';
+  }
+  function compass(deg) { return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+
+  // ================= weather =================
+  var uvMaxToday = null;
+
+  function loadWeather() {
+    var url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude=' + CONFIG.lat + '&longitude=' + CONFIG.lon
+      + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,is_day,wind_speed_10m,wind_direction_10m'
+      + '&hourly=temperature_2m,precipitation_probability,weather_code'
+      + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max'
+      + '&timezone=' + encodeURIComponent(CONFIG.timezone) + '&forecast_days=6';
+    getJSON(url).then(function (d) { renderWeather(d); mark('weather', true); })
+      .catch(function () { mark('weather', false); });
+  }
+
+  function renderWeather(d) {
+    var c = d.current, w = wmo(c.weather_code);
+    $('nowIcon').innerHTML = iconSvg(w[1], c.is_day);
+    $('nowTemp').textContent = Math.round(c.temperature_2m) + '°';
+    $('nowDesc').textContent = w[0];
+    $('nowMeta').textContent = 'feels ' + Math.round(c.apparent_temperature) + '° · wind '
+      + Math.round(c.wind_speed_10m) + ' km/h ' + compass(c.wind_direction_10m) + ' · rh ' + c.relative_humidity_2m + ' %';
+
+    $('outlook').textContent = outlook(d);
+
+    var dd = d.daily, rows = '';
+    var dayFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
+    for (var i = 0; i < dd.time.length; i++) {
+      var label = i === 0 ? 'Today' : dayFmt.format(dayStart(dd.time[i]));
+      var p = dd.precipitation_probability_max[i];
+      rows += '<tr' + (i === 0 ? ' class="today"' : '') + '><td>' + label + '</td><td>' + esc(wmo(dd.weather_code[i])[0])
+        + '</td><td class="r">' + Math.round(dd.temperature_2m_max[i]) + '°</td><td class="r">'
+        + Math.round(dd.temperature_2m_min[i]) + '°</td><td class="r">' + (p == null ? '–' : p + ' %') + '</td></tr>';
+    }
+    $('daily').innerHTML = rows.replace(/-(\d)/g, '−$1');
+
+    uvMaxToday = dd.uv_index_max ? dd.uv_index_max[0] : null;
+    renderUv();
+  }
+
+  // One plain sentence about the next 12 hours.
+  function outlook(d) {
+    var h = d.hourly, now = new Date();
+    var start = h.time.indexOf(ymd(now) + 'T' + pad(now.getHours()) + ':00');
+    if (start < 0) return '';
+    var end = Math.min(start + 12, h.time.length - 1);
+    var word = function (i) { return wmo(h.weather_code[i])[1] === 'snow' ? 'snow' : 'rain'; };
+    var at = function (i) { return h.time[i].slice(11, 16); };
+    var minT = 99, i;
+    for (i = start; i <= end; i++) minT = Math.min(minT, h.temperature_2m[i]);
+    var frost = minT <= 0 ? ' Frost likely tonight.' : '';
+
+    if (d.current.precipitation > 0.1) {
+      for (i = start + 1; i <= end; i++) if (h.precipitation_probability[i] < 30) return 'Wet now, easing around ' + at(i) + '.' + frost;
+      return 'Wet now and staying unsettled for hours.' + frost;
+    }
+    for (i = start + 1; i <= end; i++) {
+      if (h.precipitation_probability[i] >= 50) return 'Dry until about ' + at(i) + ', then ' + word(i) + ' likely.' + frost;
+    }
+    for (i = start + 1; i <= end; i++) {
+      if (h.precipitation_probability[i] >= 30) return 'Mostly dry; a passing shower is possible.' + frost;
+    }
+    return 'Dry for the next twelve hours.' + frost;
+  }
+
+  // ================= air =================
+  var airNow = null;
+
+  function loadAir() {
+    var url = 'https://air-quality-api.open-meteo.com/v1/air-quality'
+      + '?latitude=' + CONFIG.lat + '&longitude=' + CONFIG.lon
+      + '&current=european_aqi,uv_index,alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen'
+      + '&timezone=' + encodeURIComponent(CONFIG.timezone);
+    getJSON(url).then(function (d) { airNow = d.current; renderAir(); mark('air', true); })
+      .catch(function () { mark('air', false); });
+  }
+
+  function uvWord(v) { return v < 3 ? 'low' : v < 6 ? 'moderate' : v < 8 ? 'high' : v < 11 ? 'very high' : 'extreme'; }
+  function aqiWord(v) { return v < 20 ? 'good' : v < 40 ? 'fair' : v < 60 ? 'moderate' : v < 80 ? 'poor' : v < 100 ? 'very poor' : 'extremely poor'; }
+  function pollenLevel(type, v) {
+    // grains/m³, rough bands; grass becomes "high" much earlier than tree pollen
+    if (v < 1) return 0;
+    var hi = type === 'grass' ? 50 : 100, mid = type === 'grass' ? 10 : 20;
+    return v < mid ? 1 : v < hi ? 2 : 3;
+  }
+
+  function renderUv() {
+    var now = airNow && airNow.uv_index != null ? Math.round(airNow.uv_index) : null;
+    var max = uvMaxToday != null ? Math.round(uvMaxToday) : null;
+    if (now == null && max == null) { $('uv').textContent = '–'; return; }
+    var main = now != null ? now : max;
+    var txt = main + ' · ' + uvWord(main);
+    if (max != null && now != null && max > now) txt += ' (max ' + max + ')';
+    $('uv').textContent = txt;
+  }
+
+  function renderAir() {
+    renderUv();
+    var a = airNow;
+    $('aqi').textContent = a.european_aqi == null ? '–' : Math.round(a.european_aqi) + ' · ' + aqiWord(a.european_aqi);
+
+    var types = ['alder', 'birch', 'grass', 'mugwort', 'olive', 'ragweed'];
+    var best = null, bestLvl = 0;
+    types.forEach(function (t) {
+      var v = a[t + '_pollen'];
+      if (v == null) return;
+      var lvl = pollenLevel(t, v);
+      if (lvl > bestLvl) { bestLvl = lvl; best = t; }
+    });
+    $('pollen').textContent = bestLvl === 0 ? 'none' : best + ' · ' + ['', 'low', 'moderate', 'high'][bestLvl];
+  }
+
+  // ================= sun & moon (computed locally) =================
+  // ASTRO-START
+  var RAD = Math.PI / 180, DAY_MS = 864e5, J1970 = 2440588, J2000 = 2451545, OBL = RAD * 23.4397;
+  function toDays(date) { return date.valueOf() / DAY_MS - 0.5 + J1970 - J2000; }
+  function fromJulian(j) { return new Date((j + 0.5 - J1970) * DAY_MS); }
+
+  function sunTimes(date, lat, lng) {
+    var lw = RAD * -lng, phi = RAD * lat, d = toDays(date);
+    var n = Math.round(d - 0.0009 - lw / (2 * Math.PI));
+    var ds = 0.0009 + lw / (2 * Math.PI) + n;
+    var M = RAD * (357.5291 + 0.98560028 * ds);
+    var C = RAD * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    var L = M + C + RAD * 102.9372 + Math.PI;
+    var dec = Math.asin(Math.sin(OBL) * Math.sin(L));
+    var Jnoon = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+    function pair(h) {
+      var w = Math.acos((Math.sin(h * RAD) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec)));
+      var a = 0.0009 + (w + lw) / (2 * Math.PI) + n;
+      var Jset = J2000 + a + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+      return [fromJulian(Jnoon - (Jset - Jnoon)), fromJulian(Jset)];
+    }
+    var sun = pair(-0.833), civ = pair(-6);
+    return { dawn: civ[0], sunrise: sun[0], sunset: sun[1], dusk: civ[1] };
+  }
+
+  var SYNODIC = 29.530588853;
+  var PHASES = [
+    [1.84566, 'New moon'], [5.53699, 'Waxing crescent'], [9.22831, 'First quarter'], [12.91963, 'Waxing gibbous'],
+    [16.61096, 'Full moon'], [20.30228, 'Waning gibbous'], [23.99361, 'Last quarter'], [27.68493, 'Waning crescent'], [99, 'New moon']
+  ];
+  function moonInfo(date) {
+    var jd = date.valueOf() / DAY_MS + 2440587.5;
+    var age = ((jd - 2451550.1) % SYNODIC + SYNODIC) % SYNODIC;
+    var theta = 2 * Math.PI * age / SYNODIC;
+    var name = '';
+    for (var i = 0; i < PHASES.length; i++) if (age < PHASES[i][0]) { name = PHASES[i][1]; break; }
+    var toFull = ((SYNODIC / 2 - age) % SYNODIC + SYNODIC) % SYNODIC;
+    return { age: age, theta: theta, illum: (1 - Math.cos(theta)) / 2, name: name, nextFull: new Date(date.valueOf() + toFull * DAY_MS) };
+  }
+
+  // Lit part of a disc (centre cx,cy radius r), northern hemisphere view.
+  function moonPath(cx, cy, r, theta) {
+    var k = Math.cos(theta), rx = Math.abs(k) * r;
+    var top = cx + ' ' + (cy - r), bottom = cx + ' ' + (cy + r);
+    if (theta < Math.PI) { // waxing: lit on the right
+      return 'M' + top + ' A' + r + ' ' + r + ' 0 0 1 ' + bottom + ' A' + rx + ' ' + r + ' 0 0 ' + (k > 0 ? 0 : 1) + ' ' + top + 'z';
+    }
+    return 'M' + top + ' A' + r + ' ' + r + ' 0 0 0 ' + bottom + ' A' + rx + ' ' + r + ' 0 0 ' + (k > 0 ? 1 : 0) + ' ' + top + 'z';
+  }
+  // ASTRO-END
+
+  function renderSky(now) {
+    var noon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+    var t = sunTimes(noon, CONFIG.lat, CONFIG.lon);
+    var y = sunTimes(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12), CONFIG.lat, CONFIG.lon);
+    $('dawn').textContent = hm(t.dawn);
+    $('rise').textContent = hm(t.sunrise);
+    $('set').textContent = hm(t.sunset);
+    $('dusk').textContent = hm(t.dusk);
+    var len = Math.round((t.sunset - t.sunrise) / 60000);
+    var delta = len - Math.round((y.sunset - y.sunrise) / 60000);
+    $('dayLen').textContent = Math.floor(len / 60) + ' h ' + pad(len % 60) + ' m' + (delta ? ' (' + (delta > 0 ? '+' : '−') + Math.abs(delta) + ' m)' : '');
+
+    var m = moonInfo(now);
+    $('moonLit').setAttribute('d', m.illum < 0.005 ? '' : moonPath(20, 20, 17, m.theta));
+    var daysToFull = (m.nextFull - now) / DAY_MS;
+    var full = m.name === 'Full moon' ? 'tonight' : daysToFull < 1.5 ? 'full tomorrow' : 'full on the ' + ordinal(m.nextFull.getDate());
+    $('moonText').innerHTML = esc(m.name) + ', ' + Math.round(m.illum * 100) + ' % · <i>' + esc(full) + '</i>';
+  }
+
+  // ================= radar =================
+  var radarTimer = null;
+
+  function tileXY(lat, lon, z) {
+    var n = Math.pow(2, z), latR = lat * RAD;
+    return { x: (lon + 180) / 360 * n * 256, y: (1 - Math.log(Math.tan(latR) + 1 / Math.cos(latR)) / Math.PI) / 2 * n * 256 };
+  }
+
+  // Fill a layer with the tiles covering the radar box; urlFor(x, y) returns a tile URL.
+  function tiles(layer, urlFor) {
+    var box = $('radar'), W = box.clientWidth, H = box.clientHeight, z = CONFIG.radarZoom;
+    var c = tileXY(CONFIG.lat, CONFIG.lon, z), left = c.x - W / 2, top = c.y - H / 2;
+    var html = '';
+    for (var tx = Math.floor(left / 256); tx <= Math.floor((left + W) / 256); tx++) {
+      for (var ty = Math.floor(top / 256); ty <= Math.floor((top + H) / 256); ty++) {
+        html += '<img alt="" src="' + urlFor(tx, ty, z) + '" style="left:' + Math.round(tx * 256 - left) + 'px;top:' + Math.round(ty * 256 - top) + 'px">';
+      }
+    }
+    layer.innerHTML = html;
+  }
+
+  function loadBaseMap() {
+    tiles($('radarBase'), function (x, y, z) { return 'https://a.basemaps.cartocdn.com/light_nolabels/' + z + '/' + x + '/' + y + '.png'; });
+  }
+
+  function loadRadar() {
+    getJSON('https://api.rainviewer.com/public/weather-maps.json').then(function (d) {
+      var frames = (d.radar && d.radar.past) || [];
+      if (!frames.length) throw new Error('no frames');
+      if (!CONFIG.radarAnimate) frames = frames.slice(-1);
+      else frames = frames.slice(-6);
+
+      var holder = $('radarRain');
+      if (radarTimer) { clearTimeout(radarTimer); radarTimer = null; }
+      holder.innerHTML = '';
+      var layers = frames.map(function (f) {
+        var div = document.createElement('div');
+        div.className = 'layer rain';
+        holder.appendChild(div);
+        tiles(div, function (x, y, z) { return d.host + f.path + '/256/' + z + '/' + x + '/' + y + '/2/1_1.png'; });
+        return { el: div, time: new Date(f.time * 1000) };
+      });
+
+      var last = layers.length - 1, i = last;
+      function show() {
+        for (var k = 0; k < layers.length; k++) layers[k].el.className = 'layer rain' + (k === i ? ' on' : '');
+        $('radarTime').textContent = hm(layers[i].time);
+        var wait = i === last ? 2500 : 600;
+        i = i === last ? 0 : i + 1;
+        if (layers.length > 1) radarTimer = setTimeout(show, wait);
+      }
+      show();
+
+      var age = Math.round((Date.now() - layers[last].time) / 60000);
+      $('radarCaption').textContent = 'Latest frame ' + hm(layers[last].time) + (age > 30 ? ' · data delayed' : '') + '.';
+      mark('radar', true);
+    }).catch(function () { mark('radar', false); });
+  }
+
+  // ================= calendar =================
+  var calendarData = null;
+
+  function calKey() {
+    var m = /(?:^|[#&])key=([^&]+)/.exec(location.hash);
+    if (m) { var k = decodeURIComponent(m[1]); save('calKey', k); return k; }
+    return load('calKey');
+  }
+
+  function calMessage(text) {
+    $('calBox').innerHTML = '<div class="kicker"><span>Engagements</span></div><div class="empty">' + esc(text) + '</div>';
+  }
+
+  function loadCalendar() {
+    if (!CONFIG.calendarUrl) { calMessage('Set calendarUrl in the page config to show your calendar.'); return; }
+    var key = calKey();
+    if (!key) { calMessage('Open this page once with #key=… to connect the calendar.'); return; }
+    getJSON(CONFIG.calendarUrl + '?days=2&key=' + encodeURIComponent(key)).then(function (d) {
+      calendarData = d; renderCalendar(); mark('calendar', true);
+    }).catch(function () {
+      mark('calendar', false);
+      if (!calendarData) calMessage('Calendar unavailable right now.');
+    });
+  }
+
+  function eventsOn(dayKey) {
+    var ds = dayStart(dayKey), de = addDays(ds, 1);
+    return calendarData.events.filter(function (ev) {
+      if (ev.allDay) return ev.start <= dayKey && ev.end > dayKey;
+      return new Date(ev.start) < de && new Date(ev.end) > ds;
+    }).sort(function (a, b) {
+      if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+      return a.allDay ? a.title.localeCompare(b.title) : new Date(a.start) - new Date(b.start);
+    });
+  }
+
+  function evHtml(ev, dayKey, now, opts) {
+    var label, past = false;
+    if (ev.allDay) label = 'all day';
+    else {
+      var s = new Date(ev.start);
+      label = s < dayStart(dayKey) ? 'cont.' : hm(s);
+      past = new Date(ev.end) <= now;
+    }
+    var sub = opts.subs && ev.location ? '<div class="sub">' + esc(shorten(ev.location, 40)) + '</div>' : '';
+    return '<div class="ev' + (past ? ' past' : '') + (opts.small ? ' small' : '') + '"><span class="t' + (ev.allDay ? ' ad' : '') + '">' + label
+      + '</span><div><div class="ti">' + esc(shorten(ev.title || '(busy)', 44)) + '</div>' + sub + '</div></div>';
+  }
+
+  function calendarHtml(t, m, now, today, tomorrow, o) {
+    var html = '<div class="kicker"><span>Engagements · today</span><span class="aside">' + t.length + '</span></div>';
+    if (!t.length) html += '<div class="empty">Nothing scheduled.</div>';
+    t.slice(0, o.today).forEach(function (ev) { html += evHtml(ev, today, now, { subs: o.subs }); });
+    if (t.length > o.today) html += '<div class="more">and ' + (t.length - o.today) + ' more</div>';
+
+    var wd = new Intl.DateTimeFormat('en-GB', { weekday: 'short' }).format(addDays(now, 1));
+    html += '<div class="kicker" style="margin-top: 6px"><span>Tomorrow</span><span class="aside">' + wd + '</span></div>';
+    if (!m.length) html += '<div class="empty">Nothing yet.</div>';
+    m.slice(0, o.tomorrow).forEach(function (ev) { html += evHtml(ev, tomorrow, now, { subs: false, small: true }); });
+    if (m.length > o.tomorrow) html += '<div class="more">and ' + (m.length - o.tomorrow) + ' more</div>';
+    return html;
+  }
+
+  // Render generously, then shrink until it fits the column:
+  // location lines go first, then tomorrow's list, then today's list.
+  function renderCalendar() {
+    if (!calendarData) return;
+    var now = new Date(), today = ymd(now), tomorrow = ymd(addDays(now, 1));
+    var t = eventsOn(today), m = eventsOn(tomorrow);
+    var box = $('calBox');
+
+    var steps = [
+      { subs: true, today: t.length, tomorrow: 4 },
+      { subs: true, today: t.length, tomorrow: 2 },
+      { subs: false, today: t.length, tomorrow: 4 },
+      { subs: false, today: t.length, tomorrow: 2 },
+      { subs: false, today: t.length, tomorrow: 1 }
+    ];
+    for (var n = t.length - 1; n >= 3; n--) steps.push({ subs: false, today: n, tomorrow: 1 });
+
+    for (var i = 0; i < steps.length; i++) {
+      box.innerHTML = calendarHtml(t, m, now, today, tomorrow, steps[i]);
+      if (box.scrollHeight <= box.clientHeight + 1) return;
+    }
+  }
+
+  // ================= on this day =================
+  function loadOnThisDay(now) {
+    var mm = pad(now.getMonth() + 1), dd = pad(now.getDate()), L = CONFIG.wikiLang;
+    var urls = [
+      'https://api.wikimedia.org/feed/v1/wikipedia/' + L + '/onthisday/selected/' + mm + '/' + dd,
+      'https://' + L + '.wikipedia.org/api/rest_v1/feed/onthisday/selected/' + mm + '/' + dd
+    ];
+    (function attempt(i) {
+      if (i >= urls.length) { mark('wikipedia', false); return; }
+      getJSON(urls[i]).then(function (d) { renderOnThisDay(d, now); mark('wikipedia', true); })
+        .catch(function () { attempt(i + 1); });
+    })(0);
+  }
+
+  function renderOnThisDay(d, now) {
+    var items = (d.selected || []).filter(function (x) { return x.text && x.year; });
+    if (!items.length) { $('otdBody').innerHTML = '<p>Nothing listed for today.</p>'; return; }
+    var seed = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / DAY_MS);
+    var a = seed % items.length, b = (seed * 7 + 3) % items.length;
+    if (b === a) b = (a + 1) % items.length;
+    var pick = items.length > 1 ? [items[a], items[b]] : [items[a]];
+    pick.sort(function (x, y) { return x.year - y.year; });
+    $('otdBody').innerHTML = pick.map(function (x) {
+      return '<p><b>' + esc(x.year) + '</b> — ' + esc(shorten(x.text, 105)) + '</p>';
+    }).join('');
+  }
+
+  // ================= clock / day change / night =================
+  var lastMinute = -1, lastDay = '';
+  var dateFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'long' });
+  var monthFmt = new Intl.DateTimeFormat('en-GB', { month: 'short' });
+
+  function isNight(h) {
+    return CONFIG.nightFrom > CONFIG.nightTo ? (h >= CONFIG.nightFrom || h < CONFIG.nightTo) : (h >= CONFIG.nightFrom && h < CONFIG.nightTo);
+  }
+
+  function onNewDay(now) {
+    $('dateLine').textContent = dateFmt.format(now) + ' · ' + now.getDate() + ' ' + monthFmt.format(now) + ' ' + now.getFullYear();
+    renderSky(now);
+    loadOnThisDay(now);
+    loadCalendar();
+  }
+
+  function tick() {
+    var now = new Date();
+    if (now.getMinutes() !== lastMinute) {
+      lastMinute = now.getMinutes();
+      $('time').textContent = hm(now);
+      document.body.className = isNight(now.getHours()) ? 'night' : '';
+      if (calendarData) renderCalendar();
+    }
+    var day = ymd(now);
+    if (day !== lastDay) { lastDay = day; onNewDay(now); }
+    setTimeout(tick, 1000 - now.getMilliseconds() + 10);
+  }
+
+  // Full reload every few hours keeps old WebKit's memory in check.
+  // Only reload when the page is reachable, so a Wi-Fi drop never leaves an error page.
+  function safeReload() {
+    fetch(location.href.split('#')[0], { cache: 'no-store' })
+      .then(function (r) { if (r.ok) location.reload(); else retry(); })
+      .catch(retry);
+    function retry() { setTimeout(safeReload, 10 * 60 * 1000); }
+  }
+
+  // ================= start =================
+  $('coords').textContent = CONFIG.place + ' · ' + CONFIG.lat.toFixed(2) + ' N ' + CONFIG.lon.toFixed(2) + ' E';
+  fit();
+  window.addEventListener('resize', fit);
+  tick();
+  loadWeather();
+  loadAir();
+  loadBaseMap();
+  loadRadar();
+
+  var R = CONFIG.refreshMin;
+  setInterval(loadWeather, R.weather * 60000);
+  setInterval(loadAir, R.air * 60000);
+  setInterval(loadRadar, R.radar * 60000);
+  setInterval(loadCalendar, R.calendar * 60000);
+  setTimeout(safeReload, CONFIG.reloadEveryHours * 3600000);
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    var w = status.weather;
+    if (!w || Date.now() - w.at > 5 * 60000) { loadWeather(); loadAir(); loadRadar(); loadCalendar(); }
+  });
+})();
+</script>
+</body>
+</html>
