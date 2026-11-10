@@ -30,7 +30,7 @@ The dashboard has two parts:
 | Weather, forecast, maximum UV index | Open-Meteo forecast API | No |
 | UV index, air quality, pollen | Open-Meteo air-quality API | No |
 | Rain radar | RainViewer Weather Maps API | No |
-| Map | CARTO light (© OpenStreetMap contributors) | No |
+| Map | OpenStreetMap standard tiles (© OpenStreetMap contributors), loaded once per page load | No |
 | Sun times, moon phase | Calculation in the dashboard | No |
 | Historical events | Wikipedia feed | No |
 | Calendar | iCloud public calendar link, through the Worker | Yes (your key) |

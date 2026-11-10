@@ -79,7 +79,7 @@
   #radar { position: relative; height: 170px; margin-top: 8px; overflow: hidden; border: 1px solid var(--ink); background: #E9E4D8; }
   #radar .layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
   #radar img { position: absolute; width: 256px; height: 256px; display: block; }
-  #radarBase { filter: grayscale(1) contrast(0.9); opacity: 0.55; }
+  #radarBase { filter: grayscale(1) contrast(0.8) brightness(1.08); opacity: 0.45; }
   .rain { opacity: 0; filter: grayscale(1) contrast(1.8) brightness(0.55); }
   .rain.on { opacity: 0.9; }
   #radarDot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 4px; background: var(--ink); left: 50%; top: 50%; }
@@ -188,7 +188,7 @@
   </main>
 
   <footer>
-    <span>Open-Meteo · RainViewer · © OpenStreetMap, © CARTO · Wikipedia</span>
+    <span>Open-Meteo · RainViewer · © OpenStreetMap contributors · Wikipedia</span>
     <span id="updated"></span>
   </footer>
 </div>
@@ -500,7 +500,7 @@
   }
 
   function loadBaseMap() {
-    tiles($('radarBase'), function (x, y, z) { return 'https://a.basemaps.cartocdn.com/light_nolabels/' + z + '/' + x + '/' + y + '.png'; });
+    tiles($('radarBase'), function (x, y, z) { return 'https://tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png'; });
   }
 
   function loadRadar() {
